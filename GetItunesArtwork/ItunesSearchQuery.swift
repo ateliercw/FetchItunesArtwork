@@ -8,6 +8,29 @@
 
 import Foundation
 
+private extension Array {
+  var decompose: (head: T, tail: [T])? {
+    return (count > 0) ? (self[0], Array(self[1..<count])) : nil
+  }
+}
+
+private extension NSCharacterSet{
+  static var iTunesCharacterSet: NSCharacterSet{
+    let safeChars: NSMutableCharacterSet = NSMutableCharacterSet(bitmapRepresentation:
+      NSCharacterSet.alphanumericCharacterSet().bitmapRepresentation)
+    safeChars.addCharactersInString(" .-_*")
+    return safeChars
+  }
+}
+
+private extension String{
+  var itunesEncode: String{
+    let itunesSet = NSCharacterSet.iTunesCharacterSet
+    let escapedString = self.stringByAddingPercentEncodingWithAllowedCharacters(itunesSet) ?? ""
+    return escapedString.stringByReplacingOccurrencesOfString(" ", withString: "+")
+  }
+}
+
 struct ItunesSearchQuery{
   let type: SearchType
   let search: String
@@ -81,7 +104,8 @@ struct ItunesSearchQuery{
   }
 
   var url: NSURL?{
-    let urlString = "https://itunes.apple.com/search?term=\(search)&media=\(type.rawValue)&limit=10"
+    let urlString = "https://itunes.apple.com/search?term=\(search.itunesEncode)&" +
+      "media=\(type.rawValue)&limit=10"
     return NSURL(string: urlString)
   }
 }

@@ -10,18 +10,6 @@ import Foundation
 
 let args = Process.arguments
 
-extension Array {
-  var decompose: (head: T, tail: [T])? {
-    return (count > 0) ? (self[0], Array(self[1..<count])) : nil
-  }
-}
-
-extension String{
-  var itunesEncode: String{
-    return self
-  }
-}
-
 enum SearchType: String{
   case tv = "tvShow", movie = "movie"
 
