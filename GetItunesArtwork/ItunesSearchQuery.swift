@@ -36,10 +36,10 @@ struct ItunesSearchQuery{
   }
 
   static func stripInvocation(arguments: [String]) -> [String]?{
-    if let(_, tail) = Process.arguments.decompose{
+    if let(_, tail) = arguments.decompose{
       return tail
     }
-    return nil;
+    return nil
   }
 
   static func parseCommand (arguments: [String]) -> (SearchType, [String])?{
@@ -78,5 +78,10 @@ struct ItunesSearchQuery{
     case "-o", "-out", "-outFile": return true
     default: return false
     }
+  }
+
+  var url: NSURL?{
+    let urlString = "https://itunes.apple.com/search?term=\(search)&media=\(type.rawValue)&limit=10"
+    return NSURL(string: urlString)
   }
 }
