@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		260D10CB1B5DFEAF007A2C94 /* ItunesSearchQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 260D10CA1B5DFEAF007A2C94 /* ItunesSearchQuery.swift */; };
 		2668F1061B5DEA81005B5EB0 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2668F1051B5DEA81005B5EB0 /* main.swift */; };
 /* End PBXBuildFile section */
 
@@ -23,6 +24,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		260D10CA1B5DFEAF007A2C94 /* ItunesSearchQuery.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItunesSearchQuery.swift; sourceTree = "<group>"; };
 		2668F1021B5DEA81005B5EB0 /* GetItunesArtwork */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GetItunesArtwork; sourceTree = BUILT_PRODUCTS_DIR; };
 		2668F1051B5DEA81005B5EB0 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -58,6 +60,7 @@
 			isa = PBXGroup;
 			children = (
 				2668F1051B5DEA81005B5EB0 /* main.swift */,
+				260D10CA1B5DFEAF007A2C94 /* ItunesSearchQuery.swift */,
 			);
 			path = GetItunesArtwork;
 			sourceTree = "<group>";
@@ -72,6 +75,7 @@
 				2668F0FE1B5DEA81005B5EB0 /* Sources */,
 				2668F0FF1B5DEA81005B5EB0 /* Frameworks */,
 				2668F1001B5DEA81005B5EB0 /* CopyFiles */,
+				260D10C91B5DEE05007A2C94 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -113,11 +117,28 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		260D10C91B5DEE05007A2C94 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = swiftlint;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		2668F0FE1B5DEA81005B5EB0 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				260D10CB1B5DFEAF007A2C94 /* ItunesSearchQuery.swift in Sources */,
 				2668F1061B5DEA81005B5EB0 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -236,6 +257,7 @@
 				2668F10B1B5DEA81005B5EB0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

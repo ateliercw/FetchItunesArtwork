@@ -6,6 +6,6 @@ Grab high quality version of the artwork for a tv shows or movies on iTunes. Doe
 
 GetItunesArtwork (-tv|-movie) -s "string" -o outFile.jpg
 
-This will search itunes, return a list of titles that match your search and let you select one of the top 10 results via stdin, then download the resulting artwork file to outfile
+This will search iTunes, return a list of titles that match your search and let you select one of the top 10 results via stdin, then download the resulting artwork file to outfile
 
 It's dumb, ugly, but will be functional.
