@@ -8,12 +8,6 @@
 
 import Foundation
 
-private extension Array {
-  var decompose: (head: T, tail: [T])? {
-    return (count > 0) ? (self[0], Array(self[1..<count])) : nil
-  }
-}
-
 private extension NSCharacterSet{
   static var iTunesCharacterSet: NSCharacterSet{
     let safeChars: NSMutableCharacterSet = NSMutableCharacterSet(bitmapRepresentation:
