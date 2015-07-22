@@ -10,6 +10,12 @@ import Foundation
 
 let args = Process.arguments
 
+extension Array {
+  var decompose: (head: Element, tail: [Element])? {
+    return (count > 0) ? (self[0], Array(self[1..<count])) : nil
+  }
+}
+
 enum SearchType: String{
   case tv = "tvShow", movie = "movie"
 
@@ -39,12 +45,12 @@ func performQuery(query: ItunesSearchQuery){
     print("Error generating url")
     return
   }
+
   let session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration())
 
-  if let task = session.dataTaskWithURL(url, completionHandler:queryCompletion) {
-    task.resume()
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
-  }
+  session.dataTaskWithURL(url, completionHandler:queryCompletion).resume()
+
+  dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
 }
 
 func queryCompletion(data: NSData?, response: NSURLResponse?, error: NSError?){
