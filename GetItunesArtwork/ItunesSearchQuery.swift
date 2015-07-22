@@ -99,7 +99,7 @@ struct ItunesSearchQuery{
 
   var url: NSURL?{
     let urlString = "https://itunes.apple.com/search?term=\(search.itunesEncode)&" +
-      "media=\(type.rawValue)&limit=10"
+      "media=\(type.rawValue)&limit=10\(type.filterValues)"
     return NSURL(string: urlString)
   }
 }
