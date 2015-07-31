@@ -145,6 +145,7 @@ extension ItunesSearchQuery{
     task.launchPath = "/usr/bin/curl"
     task.arguments = ["-o", file, result.url]
     task.launch()
+    task.waitUntilExit()
   }
 }
 
