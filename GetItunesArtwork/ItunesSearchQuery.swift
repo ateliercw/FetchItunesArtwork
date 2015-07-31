@@ -53,8 +53,8 @@ struct ItunesSearchQuery{
   }
 
   static func stripInvocation(arguments: [String]) throws -> [String]{
-    if let(_, tail) = arguments.decompose{ return tail }
-    throw ItunesSearchQueryError.noArguments
+    guard let(_, tail) = arguments.decompose else{ throw ItunesSearchQueryError.noArguments }
+    return tail
   }
 
   static func matchCommand(command: String) -> SearchType? {
@@ -64,28 +64,25 @@ struct ItunesSearchQuery{
   }
 
   static func parseCommand (arguments: [String]) throws -> (SearchType, [String]){
-    if let(searchString, tail) = arguments.decompose, command = matchCommand(searchString){
-        return (command, tail)
-    }
-    throw ItunesSearchQueryError.badTypeQuery
+    guard let(arg, tail) = arguments.decompose else{ throw ItunesSearchQueryError.badTypeQuery }
+    guard let command = matchCommand(arg) else { throw ItunesSearchQueryError.badTypeQuery }
+    return (command, tail)
   }
 
   static func parseSearch (arguments: [String]) throws -> (String, [String]){
-    if let (searchArgument, searchTail) = arguments.decompose
-      where ItunesSearchQuery.checkArgument(searchArgument, allowed: ["-s", "-search"]),
-      let (searchString, tail) = searchTail.decompose {
-        return (searchString, tail)
-    }
-    throw ItunesSearchQueryError.badSearchTerm
+    guard let (arg, _tail) = arguments.decompose else { throw ItunesSearchQueryError.badSearchTerm }
+    let flags = ["-s", "-search"]
+    guard checkArgument(arg, allowed: flags) else { throw ItunesSearchQueryError.badSearchTerm }
+    guard let (search, tail) = _tail.decompose else { throw ItunesSearchQueryError.badSearchTerm }
+    return (search, tail)
   }
 
   static func parseFileArgument(arguments: [String]) throws -> String {
-    if let (fileArgument, fileTail) = arguments.decompose
-      where ItunesSearchQuery.checkArgument(fileArgument, allowed: ["-o", "-out", "-outFile"]),
-      let file = fileTail.first{
-        return file
-    }
-    throw ItunesSearchQueryError.badFileArgment
+    guard let (arg, tail) = arguments.decompose else { throw ItunesSearchQueryError.badFileArgment }
+    let allowed = ["-o", "-out", "-outFile"]
+    guard checkArgument(arg, allowed: allowed) else { throw ItunesSearchQueryError.badFileArgment }
+    guard let file = tail.first else { throw ItunesSearchQueryError.badFileArgment }
+    return file
   }
 
   var url: NSURL?{
