@@ -25,81 +25,72 @@ private extension String{
   }
 }
 
+enum ItunesSearchQueryError: ErrorType {
+  case noArguments, badTypeQuery, badSearchTerm, badFileArgment
+}
+
 struct ItunesSearchQuery{
   let type: SearchType
   let search: String
   let file: String
 
-  init?(commandArguments: [String]){
-    guard let cleanResults = ItunesSearchQuery.stripInvocation(commandArguments) else{
-      print("This script requires arguments to do anything useful")
-      return nil
+  init(commandArguments: [String]) throws {
+    do {
+      let typeArguments = try ItunesSearchQuery.stripInvocation(commandArguments)
+      let (type, searchArguments) = try ItunesSearchQuery.parseCommand(typeArguments)
+      let (search, fileArguments) = try ItunesSearchQuery.parseSearch(searchArguments)
+      let file = try ItunesSearchQuery.parseFileArgument(fileArguments)
+      self.type = type
+      self.search = search
+      self.file = file
+    }catch{
+      throw error
     }
-    guard let (type, searchArguments) = ItunesSearchQuery.parseCommand(cleanResults) else{
-      print("The script requires '-tv' or '-movie' as the first argument")
-      return nil
-    }
-    self.type = type
-    guard let (search, fileArguments) = ItunesSearchQuery.parseSearch(searchArguments) else{
-      print("The script requires '-s \"search string\" as the second argument")
-      return nil
-    }
-    self.search = search
-    guard let file = ItunesSearchQuery.parseFileArgument(fileArguments) else{
-      print("The script requires '-o \"outfile.jpg\" as the final argument")
-      return nil
-    }
-    self.file = file
   }
 
-  static func stripInvocation(arguments: [String]) -> [String]?{
-    if let(_, tail) = arguments.decompose{
-      return tail
-    }
+  static func checkArgument(argument: String, allowed: [String]) -> Bool{
+    return allowed.contains(argument.lowercaseString)
+  }
+
+  static func stripInvocation(arguments: [String]) throws -> [String]{
+    if let(_, tail) = arguments.decompose{ return tail }
+    throw ItunesSearchQueryError.noArguments
+  }
+
+  static func matchCommand(command: String) -> SearchType? {
+    if checkArgument(command, allowed: ["-tv", "-television", "-t"]) { return .tv }
+    if checkArgument(command, allowed: ["-movie", "-m"]) { return .movie }
     return nil
   }
 
-  static func parseCommand (arguments: [String]) -> (SearchType, [String])?{
-    if let(searchString, tail) = arguments.decompose,
-      command = SearchType.matchCommand(searchString){
+  static func parseCommand (arguments: [String]) throws -> (SearchType, [String]){
+    if let(searchString, tail) = arguments.decompose, command = matchCommand(searchString){
         return (command, tail)
     }
-    return nil
+    throw ItunesSearchQueryError.badTypeQuery
   }
 
-  static func parseSearch (arguments: [String]) -> (String, [String])?{
+  static func parseSearch (arguments: [String]) throws -> (String, [String]){
     if let (searchArgument, searchTail) = arguments.decompose
-      where ItunesSearchQuery.checkSearchArgument(searchArgument) {
-        return searchTail.decompose
+      where ItunesSearchQuery.checkArgument(searchArgument, allowed: ["-s", "-search"]),
+      let (searchString, tail) = searchTail.decompose {
+        return (searchString, tail)
     }
-    return nil
+    throw ItunesSearchQueryError.badSearchTerm
   }
 
-  static func checkSearchArgument(argument: String) -> Bool{
-    switch argument.lowercaseString{
-    case "-s", "-search": return true
-    default: return false
-    }
-  }
-
-  static func parseFileArgument(arguments: [String]) -> String? {
+  static func parseFileArgument(arguments: [String]) throws -> String {
     if let (fileArgument, fileTail) = arguments.decompose
-      where ItunesSearchQuery.checkFileArgument(fileArgument) {
-        return fileTail.first
+      where ItunesSearchQuery.checkArgument(fileArgument, allowed: ["-o", "-out", "-outFile"]),
+      let file = fileTail.first{
+        return file
     }
-    return nil
-  }
-
-  static func checkFileArgument(argument: String) -> Bool{
-    switch argument.lowercaseString{
-    case "-o", "-out", "-outFile": return true
-    default: return false
-    }
+    throw ItunesSearchQueryError.badFileArgment
   }
 
   var url: NSURL?{
     let urlString = "https://itunes.apple.com/search?term=\(search.itunesEncode)&" +
-      "media=\(type.rawValue)&limit=10\(type.filterValues)"
+    "media=\(type.rawValue)&limit=10\(type.filterValues)"
     return NSURL(string: urlString)
   }
 }

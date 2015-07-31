@@ -19,14 +19,6 @@ extension Array {
 enum SearchType: String{
   case tv = "tvShow", movie = "movie"
 
-  static func matchCommand(command: String) -> SearchType? {
-    switch command.lowercaseString{
-    case "-tv", "-television", "-t": return .tv
-    case "-movie", "-m": return .movie
-    default:return nil
-    }
-  }
-
   var titleSearchKey: String {
     switch self{
     case .movie: return "trackName"
@@ -149,4 +141,21 @@ extension ItunesSearchQuery{
   }
 }
 
-ItunesSearchQuery(commandArguments: Process.arguments)?.performQuery()
+extension ItunesSearchQueryError{
+  func consoleError() -> String{
+    switch (self){
+    case noArguments: return "arguments to do anything useful"
+    case badTypeQuery: return "'-tv' or '-movie' as the first argument"
+    case badSearchTerm: return "'-s \"search string\" as the second argument"
+    case badFileArgment: return "'-o \"outfile.jpg\" as the final argument"
+    }
+  }
+}
+
+do {
+  try ItunesSearchQuery(commandArguments: Process.arguments).performQuery()
+}catch{
+  if let itunesError = error as? ItunesSearchQueryError{
+    print("This script requires \(itunesError.consoleError())");
+  }
+}
