@@ -142,7 +142,7 @@ extension ItunesSearchQuery{
 }
 
 extension ItunesSearchQueryError{
-  func consoleError() -> String{
+  var consoleError: String{
     switch (self){
     case noArguments: return "arguments to do anything useful"
     case badTypeQuery: return "'-tv' or '-movie' as the first argument"
@@ -156,6 +156,9 @@ do {
   try ItunesSearchQuery(commandArguments: Process.arguments).performQuery()
 }catch{
   if let itunesError = error as? ItunesSearchQueryError{
-    print("This script requires \(itunesError.consoleError())");
+    print("This script requires \(itunesError.consoleError)");
+  }
+  else{
+    print("Unhandled other error")
   }
 }

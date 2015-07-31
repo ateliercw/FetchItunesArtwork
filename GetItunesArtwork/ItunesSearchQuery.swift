@@ -36,16 +36,11 @@ struct ItunesSearchQuery{
 
   init(commandArguments: [String]) throws {
     do {
-      let typeArguments = try ItunesSearchQuery.stripInvocation(commandArguments)
-      let (type, searchArguments) = try ItunesSearchQuery.parseCommand(typeArguments)
-      let (search, fileArguments) = try ItunesSearchQuery.parseSearch(searchArguments)
-      let file = try ItunesSearchQuery.parseFileArgument(fileArguments)
-      self.type = type
-      self.search = search
-      self.file = file
-    }catch{
-      throw error
-    }
+      var commandBuffer = try ItunesSearchQuery.stripInvocation(commandArguments)
+      (type, commandBuffer) = try ItunesSearchQuery.parseCommand(commandBuffer)
+      (search, commandBuffer) = try ItunesSearchQuery.parseSearch(commandBuffer)
+      file = try ItunesSearchQuery.parseFileArgument(commandBuffer)
+    }catch{ throw error }
   }
 
   static func checkArgument(argument: String, allowed: [String]) -> Bool{
