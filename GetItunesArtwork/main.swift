@@ -8,106 +8,81 @@
 
 import Foundation
 
-let args = Process.arguments
+enum ItunesSearchCommands: CustomStringConvertible{
+  case type(SearchType), search(String), file(String)
 
-extension Array {
-  var decompose: (head: Element, tail: [Element])? {
-    return (count > 0) ? (self[0], Array(self[1..<count])) : nil
-  }
-}
-
-enum SearchType: String{
-  case tv = "tvShow", movie = "movie"
-
-  var titleSearchKey: String {
+  var description: String{
     switch self{
-    case .movie: return "trackName"
-    case .tv: return "collectionName"
-    }
-  }
-
-  var filterValues: String{
-    switch self{
-    case .movie: return "&entity=movie&attribute=movieTerm"
-    case .tv: return "&entity=tvSeason&attribute=tvSeasonTerm"
+    case .file(_): return "-file, -f, -outfile, or -o"
+    case .search(_): return "-search or -s"
+    case .type(_): return "-tv, -t, -movie, or -m"
     }
   }
 }
 
-struct ItunesSearchResult{
-  let url: String
-  let label: String
+extension ItunesSearchQuery: CommandParsable{
+  typealias Argument = String
+  typealias Command = ItunesSearchCommands
+  typealias CommandError = CommandParserError<Command, Argument>
 
-  init(url: String, label: String){
-    self.url = url
-    self.label = label
+  static func parseArument(arguments: [Argument]) throws -> (Command, [Argument]) {
+    guard let (argument, tail) = arguments.decompose else { throw CommandError.noArguments }
+    switch argument.lowercaseString {
+    case "-tv", "-t": return (ItunesSearchCommands.type(SearchType.tv), tail)
+    case "-movie", "-m": return (ItunesSearchCommands.type(SearchType.movie), tail)
+    case "-search", "-s":
+      guard let (search, innerTail) = tail.decompose else { throw CommandError.missingArgument }
+      return (ItunesSearchCommands.search(search), innerTail)
+    case "-file", "-f", "-o", "-outfile":
+      guard let (file, innerTail) = tail.decompose else { throw CommandError.missingArgument }
+      return (ItunesSearchCommands.file(file), innerTail)
+    default: throw CommandError.badCommand(argument)
+    }
+  }
+
+  init(arguments: [Argument]) throws{
+    do {
+      let commands = try ItunesSearchQuery.parseCommands(arguments)
+      var type: SearchType?
+      var file: String?
+      var search: String?
+
+      for cmd in commands{
+        switch cmd{
+        case .file(let fileIn):
+          guard file == nil else { throw CommandError.duplicateCommand(cmd) }
+          file = fileIn
+        case .type(let typeIn):
+          guard type == nil else { throw CommandError.duplicateCommand(cmd) }
+          type = typeIn
+        case .search(let searchIn):
+          guard search == nil else { throw CommandError.duplicateCommand(cmd) }
+          search = searchIn
+        }
+      }
+      guard let finalType = type, finalSearch = search, finalFile = file else {
+        throw CommandError.missingRequiredCommands
+      }
+      (self.type, self.search, self.file) = (finalType, finalSearch, finalFile)
+    }catch{
+      throw error
+    }
   }
 }
 
-let semaphore = dispatch_semaphore_create(0)
+extension CommandParserError {
+  var consoleError: String{
+    switch self{
+    case .badCommand(let arg): return "\"\(arg)\" is not a valid command"
+    case .noArguments: return "no arguments were supplied"
+    case .missingArgument: return "missing argument"
+    case .missingRequiredCommands: return "at least one required argument was not supplied"
+    case .duplicateCommand(let cmd): return "\(cmd) should not be duplicated"
+    }
+  }
+}
 
 extension ItunesSearchQuery{
-
-  func performQuery(){
-    guard let url = url else{
-      print("Error generating url")
-      return
-    }
-
-    let config = NSURLSessionConfiguration.defaultSessionConfiguration()
-    let session = NSURLSession(configuration: config)
-
-    session.dataTaskWithURL(url, completionHandler:queryCompletion).resume()
-
-    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
-  }
-
-  func queryCompletion(data: NSData?, response: NSURLResponse?, error: NSError?){
-    if let _ = error {
-      print("Error loading itunes data")
-    }else if let data = data{
-      parseResults(data)
-    }
-    dispatch_semaphore_signal(semaphore)
-  }
-
-  func parseResults(data: NSData){
-    do {
-      let json = try NSJSONSerialization.JSONObjectWithData(data,
-        options: NSJSONReadingOptions.AllowFragments)
-      if let results = json["results"] as? [AnyObject] where results.count > 0 {
-        prepareResults(results)
-      }else{
-        print("No results found")
-      }
-    }
-    catch{
-      print("Error parsing JSON")
-    }
-  }
-
-  func prepareResults(results: [AnyObject]){
-    let output = results.flatMap{ result in
-      return resultFromJSON(result)
-    }
-    presentOptions(output.sort{ (lhs, rhs) in
-      return lhs.label.caseInsensitiveCompare(rhs.label) == NSComparisonResult.OrderedAscending
-    })
-  }
-
-  func resultFromJSON(jsonResult: AnyObject) -> ItunesSearchResult? {
-    guard let result = jsonResult as? [String:AnyObject] else {
-      return nil
-    }
-    guard let title = result[self.type.titleSearchKey] as? String,
-      let artworkUrl100 = result["artworkUrl100"] as? String  else {
-        return nil
-    }
-    let artworkURL = artworkUrl100.stringByReplacingOccurrencesOfString("100x100",
-      withString: "600x600")
-    return ItunesSearchResult(url: artworkURL, label: title)
-  }
-
   func presentOptions(results: [ItunesSearchResult]){
     for (idx, result) in results.enumerate() {
       print("\(idx) - \(result.label)")
@@ -115,8 +90,8 @@ extension ItunesSearchQuery{
     print("Select a number to download, or hit <Enter> to quit.")
     guard let input = getLine(), let selection = Int(input)
       where selection >= 0 && selection < results.count else{
-      print("closing")
-      return
+        print("closing")
+        return
     }
     downloadResults(results[selection]);
   }
@@ -139,26 +114,29 @@ extension ItunesSearchQuery{
     task.launch()
     task.waitUntilExit()
   }
-}
 
-extension ItunesSearchQueryError{
-  var consoleError: String{
-    switch (self){
-    case noArguments: return "arguments to do anything useful"
-    case badTypeQuery: return "'-tv' or '-movie' as the first argument"
-    case badSearchTerm: return "'-s \"search string\" as the second argument"
-    case badFileArgment: return "'-o \"outfile.jpg\" as the final argument"
+  func completeCommandQuery(data: NSData?, response: NSURLResponse?, error: NSError?){
+    if let _ = error {
+      print("Error communicating with itunes")
+    }else if let data = data{
+      parseResults(data, resultHandler: presentOptions)
     }
+    dispatch_semaphore_signal(semaphore)
   }
 }
+
+typealias ItunesParserError = CommandParserError<ItunesSearchCommands, String>
+
+let semaphore = dispatch_semaphore_create(0)
 
 do {
-  try ItunesSearchQuery(commandArguments: Process.arguments).performQuery()
+  let query = try ItunesSearchQuery(arguments: Process.arguments)
+  try query.performQuery(query.completeCommandQuery)
+  dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
 }catch{
-  if let itunesError = error as? ItunesSearchQueryError{
-    print("This script requires \(itunesError.consoleError)");
-  }
-  else{
-    print("Unhandled other error")
+  if let itunesError = error as? ItunesParserError{
+    print("\(itunesError.consoleError)");
+  }else{
+    print("Unhandled other error \(error)")
   }
 }

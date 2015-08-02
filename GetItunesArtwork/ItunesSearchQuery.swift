@@ -29,60 +29,104 @@ enum ItunesSearchQueryError: ErrorType {
   case noArguments, badTypeQuery, badSearchTerm, badFileArgment
 }
 
+enum SearchType: String{
+  case tv = "tvShow", movie = "movie"
+
+  var titleSearchKey: String {
+    switch self{
+    case .movie: return "trackName"
+    case .tv: return "collectionName"
+    }
+  }
+
+  var filterValues: String{
+    switch self{
+    case .movie: return "entity=movie&attribute=movieTerm"
+    case .tv: return "entity=tvSeason&attribute=tvSeasonTerm"
+    }
+  }
+}
+
+struct ItunesSearchResult{
+  let url: String
+  let label: String
+
+  init(url: String, label: String){
+    self.url = url
+    self.label = label
+  }
+
+  static func sort(lhs: ItunesSearchResult, rhs: ItunesSearchResult) -> Bool{
+      return lhs.label.caseInsensitiveCompare(rhs.label) == NSComparisonResult.OrderedAscending
+  }
+}
+
+enum ItunesSearchErrors: ErrorType{
+  case badUrl(String)
+}
+
 struct ItunesSearchQuery{
   let type: SearchType
   let search: String
   let file: String
 
-  init(commandArguments: [String]) throws {
+  func url() throws -> NSURL{
+    let baseURL = "https://itunes.apple.com/search"
+    let term = "term=\(search.itunesEncode)"
+    let media = "media=\(type.rawValue)"
+    let urlString = "\(baseURL)?\(term)&\(media)&\(type.filterValues)&limit=10\(type.filterValues)"
+    let maybeURL = NSURL(string: urlString)
+    guard let url = maybeURL else { throw  ItunesSearchErrors.badUrl(urlString) }
+    return url
+  }
+}
+
+extension ItunesSearchQuery{
+
+  func performQuery(completionHandler: (NSData?, NSURLResponse?, NSError?) -> Void) throws{
     do {
-      var commandBuffer = try ItunesSearchQuery.stripInvocation(commandArguments)
-      (type, commandBuffer) = try ItunesSearchQuery.parseCommand(commandBuffer)
-      (search, commandBuffer) = try ItunesSearchQuery.parseSearch(commandBuffer)
-      file = try ItunesSearchQuery.parseFileArgument(commandBuffer)
-    }catch{ throw error }
+      let url = try self.url()
+      let config = NSURLSessionConfiguration.defaultSessionConfiguration()
+      let session = NSURLSession(configuration: config)
+      session.dataTaskWithURL(url, completionHandler:completionHandler).resume()
+    }catch{
+      throw error
+    }
   }
 
-  static func checkArgument(argument: String, allowed: [String]) -> Bool{
-    return allowed.contains(argument.lowercaseString)
+  func parseResults(data: NSData, resultHandler: ([ItunesSearchResult]) -> Void){
+    do {
+      let json = try NSJSONSerialization.JSONObjectWithData(data,
+        options: NSJSONReadingOptions.AllowFragments)
+      if let results = json["results"] as? [AnyObject] where results.count > 0 {
+        prepareResults(results, resultHandler: resultHandler)
+      }else{
+        print("No results found")
+      }
+    }
+    catch{
+      print("Error parsing JSON")
+    }
   }
 
-  static func stripInvocation(arguments: [String]) throws -> [String]{
-    guard let(_, tail) = arguments.decompose else{ throw ItunesSearchQueryError.noArguments }
-    return tail
+  func prepareResults(results: [AnyObject], resultHandler: ([ItunesSearchResult]) -> Void){
+    let output = results.flatMap{ result in
+      return resultFromJSON(result)
+    }
+    resultHandler(output.sort(ItunesSearchResult.sort))
   }
 
-  static func matchCommand(command: String) -> SearchType? {
-    if checkArgument(command, allowed: ["-tv", "-television", "-t"]) { return .tv }
-    if checkArgument(command, allowed: ["-movie", "-m"]) { return .movie }
-    return nil
+  func resultFromJSON(jsonResult: AnyObject) -> ItunesSearchResult? {
+    guard let result = jsonResult as? [String:AnyObject] else {
+      return nil
+    }
+    guard let title = result[self.type.titleSearchKey] as? String,
+      let artworkUrl100 = result["artworkUrl100"] as? String  else {
+        return nil
+    }
+    let artworkURL = artworkUrl100.stringByReplacingOccurrencesOfString("100x100",
+      withString: "600x600")
+    return ItunesSearchResult(url: artworkURL, label: title)
   }
 
-  static func parseCommand (arguments: [String]) throws -> (SearchType, [String]){
-    guard let(arg, tail) = arguments.decompose else{ throw ItunesSearchQueryError.badTypeQuery }
-    guard let command = matchCommand(arg) else { throw ItunesSearchQueryError.badTypeQuery }
-    return (command, tail)
-  }
-
-  static func parseSearch (arguments: [String]) throws -> (String, [String]){
-    guard let (arg, _tail) = arguments.decompose else { throw ItunesSearchQueryError.badSearchTerm }
-    let flags = ["-s", "-search"]
-    guard checkArgument(arg, allowed: flags) else { throw ItunesSearchQueryError.badSearchTerm }
-    guard let (search, tail) = _tail.decompose else { throw ItunesSearchQueryError.badSearchTerm }
-    return (search, tail)
-  }
-
-  static func parseFileArgument(arguments: [String]) throws -> String {
-    guard let (arg, tail) = arguments.decompose else { throw ItunesSearchQueryError.badFileArgment }
-    let allowed = ["-o", "-out", "-outFile"]
-    guard checkArgument(arg, allowed: allowed) else { throw ItunesSearchQueryError.badFileArgment }
-    guard let file = tail.first else { throw ItunesSearchQueryError.badFileArgment }
-    return file
-  }
-
-  var url: NSURL?{
-    let urlString = "https://itunes.apple.com/search?term=\(search.itunesEncode)&" +
-    "media=\(type.rawValue)&limit=10\(type.filterValues)"
-    return NSURL(string: urlString)
-  }
 }
