@@ -10,6 +10,7 @@
 		260D10CB1B5DFEAF007A2C94 /* ItunesSearchQuery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 260D10CA1B5DFEAF007A2C94 /* ItunesSearchQuery.swift */; };
 		264727EC1B6DB7D700E668AF /* CommandParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264727EB1B6DB7D700E668AF /* CommandParser.swift */; };
 		264727EE1B6DD22100E668AF /* DecomposeArray.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264727ED1B6DD22100E668AF /* DecomposeArray.swift */; };
+		264A92F11B707C78002EAEB4 /* ItunesResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264A92F01B707C78002EAEB4 /* ItunesResponse.swift */; };
 		2668F1061B5DEA81005B5EB0 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2668F1051B5DEA81005B5EB0 /* main.swift */; };
 /* End PBXBuildFile section */
 
@@ -29,9 +30,9 @@
 		260D10CA1B5DFEAF007A2C94 /* ItunesSearchQuery.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItunesSearchQuery.swift; sourceTree = "<group>"; };
 		264727EB1B6DB7D700E668AF /* CommandParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CommandParser.swift; sourceTree = "<group>"; };
 		264727ED1B6DD22100E668AF /* DecomposeArray.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DecomposeArray.swift; sourceTree = "<group>"; };
+		264A92F01B707C78002EAEB4 /* ItunesResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ItunesResponse.swift; sourceTree = "<group>"; };
 		2668F1021B5DEA81005B5EB0 /* GetItunesArtwork */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = GetItunesArtwork; sourceTree = BUILT_PRODUCTS_DIR; };
 		2668F1051B5DEA81005B5EB0 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
-		26BFFA9C1B6C7F390049776D /* ArrayDecomposing.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; name = ArrayDecomposing.playground; path = ../../../Desktop/ArrayDecomposing.playground; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -48,7 +49,6 @@
 		2668F0F91B5DEA81005B5EB0 = {
 			isa = PBXGroup;
 			children = (
-				26BFFA9C1B6C7F390049776D /* ArrayDecomposing.playground */,
 				2668F1041B5DEA81005B5EB0 /* GetItunesArtwork */,
 				2668F1031B5DEA81005B5EB0 /* Products */,
 			);
@@ -69,6 +69,7 @@
 				264727ED1B6DD22100E668AF /* DecomposeArray.swift */,
 				264727EB1B6DB7D700E668AF /* CommandParser.swift */,
 				260D10CA1B5DFEAF007A2C94 /* ItunesSearchQuery.swift */,
+				264A92F01B707C78002EAEB4 /* ItunesResponse.swift */,
 			);
 			path = GetItunesArtwork;
 			sourceTree = "<group>";
@@ -147,6 +148,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				260D10CB1B5DFEAF007A2C94 /* ItunesSearchQuery.swift in Sources */,
+				264A92F11B707C78002EAEB4 /* ItunesResponse.swift in Sources */,
 				264727EE1B6DD22100E668AF /* DecomposeArray.swift in Sources */,
 				264727EC1B6DB7D700E668AF /* CommandParser.swift in Sources */,
 				2668F1061B5DEA81005B5EB0 /* main.swift in Sources */,

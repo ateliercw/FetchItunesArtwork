@@ -16,6 +16,10 @@ enum CommandParserError<Command, Argument>: ErrorType {
   case duplicateCommand(Command)
 }
 
+protocol ConsoleError{
+  var consoleError: String{ get }
+}
+
 protocol CommandParsable{
   typealias Command
   typealias Argument

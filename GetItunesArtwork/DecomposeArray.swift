@@ -13,3 +13,13 @@ extension Array {
     return (count > 0) ? (self[0], Array(self[1..<count])) : nil
   }
 }
+
+extension CollectionType{
+  func throwingMap<T>(@noescape transform: (Self.Generator.Element) throws -> T) rethrows -> [T]{
+    var result: [T] = []
+    for x in self {
+      try result.append(transform(x))
+    }
+    return result
+  }
+}

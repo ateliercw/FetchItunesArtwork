@@ -47,22 +47,8 @@ enum SearchType: String{
   }
 }
 
-struct ItunesSearchResult{
-  let url: String
-  let label: String
-
-  init(url: String, label: String){
-    self.url = url
-    self.label = label
-  }
-
-  static func sort(lhs: ItunesSearchResult, rhs: ItunesSearchResult) -> Bool{
-      return lhs.label.caseInsensitiveCompare(rhs.label) == NSComparisonResult.OrderedAscending
-  }
-}
-
 enum ItunesSearchErrors: ErrorType{
-  case badUrl(String)
+  case badUrl(String), noResults
 }
 
 struct ItunesSearchQuery{
@@ -79,9 +65,6 @@ struct ItunesSearchQuery{
     guard let url = maybeURL else { throw  ItunesSearchErrors.badUrl(urlString) }
     return url
   }
-}
-
-extension ItunesSearchQuery{
 
   func performQuery(completionHandler: (NSData?, NSURLResponse?, NSError?) -> Void) throws{
     do {
@@ -94,39 +77,15 @@ extension ItunesSearchQuery{
     }
   }
 
-  func parseResults(data: NSData, resultHandler: ([ItunesSearchResult]) -> Void){
+  func parseResults(data: NSData) throws -> ItunesResponse {
     do {
-      let json = try NSJSONSerialization.JSONObjectWithData(data,
-        options: NSJSONReadingOptions.AllowFragments)
-      if let results = json["results"] as? [AnyObject] where results.count > 0 {
-        prepareResults(results, resultHandler: resultHandler)
-      }else{
-        print("No results found")
+      let jsonOptions = NSJSONReadingOptions.AllowFragments
+      let json = try NSJSONSerialization.JSONObjectWithData(data, options: jsonOptions)
+      guard let results = json["results"] as? [NSDictionary] where results.count > 0 else {
+        throw ItunesSearchErrors.noResults
       }
+      return try ItunesResponse(mediaType: self.type, json: results)
     }
-    catch{
-      print("Error parsing JSON")
-    }
+    catch{ throw error }
   }
-
-  func prepareResults(results: [AnyObject], resultHandler: ([ItunesSearchResult]) -> Void){
-    let output = results.flatMap{ result in
-      return resultFromJSON(result)
-    }
-    resultHandler(output.sort(ItunesSearchResult.sort))
-  }
-
-  func resultFromJSON(jsonResult: AnyObject) -> ItunesSearchResult? {
-    guard let result = jsonResult as? [String:AnyObject] else {
-      return nil
-    }
-    guard let title = result[self.type.titleSearchKey] as? String,
-      let artworkUrl100 = result["artworkUrl100"] as? String  else {
-        return nil
-    }
-    let artworkURL = artworkUrl100.stringByReplacingOccurrencesOfString("100x100",
-      withString: "600x600")
-    return ItunesSearchResult(url: artworkURL, label: title)
-  }
-
 }

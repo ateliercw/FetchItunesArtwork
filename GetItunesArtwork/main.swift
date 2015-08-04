@@ -70,7 +70,7 @@ extension ItunesSearchQuery: CommandParsable{
   }
 }
 
-extension CommandParserError {
+extension CommandParserError: ConsoleError{
   var consoleError: String{
     switch self{
     case .badCommand(let arg): return "\"\(arg)\" is not a valid command"
@@ -82,8 +82,39 @@ extension CommandParserError {
   }
 }
 
+extension ItunesSearchResultError: ConsoleError{
+  var consoleError: String{
+    switch self{
+    case .noArt: return "No artwork found in a node"
+    case .noTitle: return "No titile found in a node"
+    case .badResult: return "Cound not parse node"
+    }
+  }
+}
+
 extension ItunesSearchQuery{
-  func presentOptions(results: [ItunesSearchResult]){
+  func downloadResults(result: ItunesSearchResult){
+    print("downloading artwork for: \(result.label)")
+    let task = NSTask();
+    task.launchPath = "/usr/bin/curl"
+    task.arguments = ["-o", file, result.url]
+    task.launch()
+    task.waitUntilExit()
+  }
+}
+
+func getLine() -> String? {
+  let keyboard = NSFileHandle.fileHandleWithStandardInput()
+  guard let inputString = NSString(data: keyboard.availableData,
+    encoding: NSUTF8StringEncoding) else{
+      return nil
+  }
+  let set = NSCharacterSet.whitespaceAndNewlineCharacterSet()
+  return inputString.stringByTrimmingCharactersInSet(set)
+}
+
+extension ItunesResponse{
+  func presentOptions(completion: (ItunesSearchResult) -> Void ){
     for (idx, result) in results.enumerate() {
       print("\(idx) - \(result.label)")
     }
@@ -93,35 +124,7 @@ extension ItunesSearchQuery{
         print("closing")
         return
     }
-    downloadResults(results[selection]);
-  }
-
-  func getLine() -> String? {
-    let keyboard = NSFileHandle.fileHandleWithStandardInput()
-    guard let inputString = NSString(data: keyboard.availableData,
-      encoding: NSUTF8StringEncoding) else{
-        return nil
-    }
-    let set = NSCharacterSet.whitespaceAndNewlineCharacterSet()
-    return inputString.stringByTrimmingCharactersInSet(set)
-  }
-
-  func downloadResults(result: ItunesSearchResult){
-    print("downloading artwork for: \(result.label)")
-    let task = NSTask();
-    task.launchPath = "/usr/bin/curl"
-    task.arguments = ["-o", file, result.url]
-    task.launch()
-    task.waitUntilExit()
-  }
-
-  func completeCommandQuery(data: NSData?, response: NSURLResponse?, error: NSError?){
-    if let _ = error {
-      print("Error communicating with itunes")
-    }else if let data = data{
-      parseResults(data, resultHandler: presentOptions)
-    }
-    dispatch_semaphore_signal(semaphore)
+    completion(results[selection]);
   }
 }
 
@@ -131,12 +134,23 @@ let semaphore = dispatch_semaphore_create(0)
 
 do {
   let query = try ItunesSearchQuery(arguments: Process.arguments)
-  try query.performQuery(query.completeCommandQuery)
+  var data: NSData?, error: NSError?
+  try query.performQuery{ (bData: NSData?, _: NSURLResponse?, bError: NSError?) in
+    (data, error) = (bData, bError)
+    dispatch_semaphore_signal(semaphore)
+  }
   dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER)
+  if let error = error{
+    throw error
+  }
+  guard let finalData = data else { throw ItunesSearchErrors.noResults }
+  let response = try query.parseResults(finalData)
+  response.presentOptions(query.downloadResults)
 }catch{
-  if let itunesError = error as? ItunesParserError{
-    print("\(itunesError.consoleError)");
+  if let consoleError = error as? ConsoleError{
+    print("\(consoleError.consoleError)");
   }else{
-    print("Unhandled other error \(error)")
+    let nserror = error as NSError
+    print("\(nserror.localizedDescription)")
   }
 }
