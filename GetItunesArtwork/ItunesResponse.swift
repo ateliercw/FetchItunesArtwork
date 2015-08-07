@@ -32,21 +32,19 @@ struct ItunesResponse{
 
   init(mediaType: SearchType, json: [NSDictionary]) throws {
     self.mediaType = mediaType
-    do {
-      self.results = try json.throwingMap{ jsonResult in
-        guard let result = jsonResult as? [String:AnyObject] else {
-          throw ItunesSearchResultError.badResult
-        }
-        guard let title = result[mediaType.titleSearchKey] as? String else{
-          throw ItunesSearchResultError.noTitle
-        }
-        guard let artworkUrl100 = result["artworkUrl100"] as? String  else {
-          throw ItunesSearchResultError.noArt
-        }
-        let artworkURL = artworkUrl100.stringByReplacingOccurrencesOfString("100x100",
-          withString: "600x600")
-        return ItunesSearchResult(url: artworkURL, label: title)
+    self.results = try json.throwingMap{ jsonResult in
+      guard let result = jsonResult as? [String:AnyObject] else {
+        throw ItunesSearchResultError.badResult
+      }
+      guard let title = result[mediaType.titleSearchKey] as? String else{
+        throw ItunesSearchResultError.noTitle
+      }
+      guard let artworkUrl100 = result["artworkUrl100"] as? String  else {
+        throw ItunesSearchResultError.noArt
+      }
+      let artworkURL = artworkUrl100.stringByReplacingOccurrencesOfString("100x100",
+        withString: "600x600")
+      return ItunesSearchResult(url: artworkURL, label: title)
       }.sort(ItunesSearchResult.sort)
-    }
   }
 }

@@ -67,14 +67,10 @@ struct ItunesSearchQuery{
   }
 
   func performQuery(completionHandler: (NSData?, NSURLResponse?, NSError?) -> Void) throws{
-    do {
-      let url = try self.url()
-      let config = NSURLSessionConfiguration.defaultSessionConfiguration()
-      let session = NSURLSession(configuration: config)
-      session.dataTaskWithURL(url, completionHandler:completionHandler).resume()
-    }catch{
-      throw error
-    }
+    let url = try self.url()
+    let config = NSURLSessionConfiguration.defaultSessionConfiguration()
+    let session = NSURLSession(configuration: config)
+    session.dataTaskWithURL(url, completionHandler:completionHandler).resume()
   }
 
   func parseResults(data: NSData) throws -> ItunesResponse {

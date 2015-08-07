@@ -23,29 +23,20 @@ protocol ConsoleError{
 protocol CommandParsable{
   typealias Command
   typealias Argument
-
-  static func parseArument(arguments: [Argument]) throws -> (Command, [Argument])
 }
 
 extension CommandParsable{
-  static func parseCommands(input: [Argument]) throws -> [Command] {
-    guard let (_, main) = input.decompose else {
-      throw CommandParserError<Command, Argument>.noArguments
-    }
-    do {
-      return try consumeInput(main)
-    }catch{
-      throw error
-    }
+  typealias Parser = ([Argument]) throws -> (Command, [Argument])
+
+  static func parseCommands(input: [Argument], parser: Parser) throws -> [Command] {
+      guard let (_, main) = input.decompose else {
+        throw CommandParserError<Command, Argument>.noArguments
+      }
+      return try consumeInput(main, parser:parser)
   }
 
-  private static func consumeInput(input: [Argument]) throws -> [Command] {
-    do {
-      let (cmd, tail) = try parseArument(input)
-      if tail.count > 0 { return try [cmd] + consumeInput(tail) }
-      return [cmd]
-    }catch{
-      throw error
-    }
+  private static func consumeInput(input: [Argument], parser: Parser) throws -> [Command] {
+      let (cmd, tail) = try parser(input)
+      return tail.count > 0 ? try [cmd] + consumeInput(tail, parser:parser) : [cmd]
   }
 }

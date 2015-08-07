@@ -41,32 +41,29 @@ extension ItunesSearchQuery: CommandParsable{
   }
 
   init(arguments: [Argument]) throws{
-    do {
-      let commands = try ItunesSearchQuery.parseCommands(arguments)
-      var type: SearchType?
-      var file: String?
-      var search: String?
+    let parser = ItunesSearchQuery.parseArument
+    let commands = try ItunesSearchQuery.parseCommands(arguments, parser: parser)
+    var type: SearchType?
+    var file: String?
+    var search: String?
 
-      for cmd in commands{
-        switch cmd{
-        case .file(let fileIn):
-          guard file == nil else { throw CommandError.duplicateCommand(cmd) }
-          file = fileIn
-        case .type(let typeIn):
-          guard type == nil else { throw CommandError.duplicateCommand(cmd) }
-          type = typeIn
-        case .search(let searchIn):
-          guard search == nil else { throw CommandError.duplicateCommand(cmd) }
-          search = searchIn
-        }
+    for cmd in commands{
+      switch cmd{
+      case .file(let fileIn):
+        guard file == nil else { throw CommandError.duplicateCommand(cmd) }
+        file = fileIn
+      case .type(let typeIn):
+        guard type == nil else { throw CommandError.duplicateCommand(cmd) }
+        type = typeIn
+      case .search(let searchIn):
+        guard search == nil else { throw CommandError.duplicateCommand(cmd) }
+        search = searchIn
       }
-      guard let finalType = type, finalSearch = search, finalFile = file else {
-        throw CommandError.missingRequiredCommands
-      }
-      (self.type, self.search, self.file) = (finalType, finalSearch, finalFile)
-    }catch{
-      throw error
     }
+    guard let finalType = type, finalSearch = search, finalFile = file else {
+      throw CommandError.missingRequiredCommands
+    }
+    (self.type, self.search, self.file) = (finalType, finalSearch, finalFile)
   }
 }
 
@@ -130,9 +127,8 @@ extension ItunesResponse{
 
 typealias ItunesParserError = CommandParserError<ItunesSearchCommands, String>
 
-let semaphore = dispatch_semaphore_create(0)
-
 do {
+  let semaphore = dispatch_semaphore_create(0)
   let query = try ItunesSearchQuery(arguments: Process.arguments)
   var data: NSData?, error: NSError?
   try query.performQuery{ (bData: NSData?, _: NSURLResponse?, bError: NSError?) in
